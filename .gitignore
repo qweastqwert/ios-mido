@@ -1,0 +1,24 @@
+# Generated images, logs, and local captures
+artifacts/
+*.img
+*.zip
+*.log
+
+# Raw phone captures and partition dumps
+evidence/**/boot-chain/verified/
+evidence/**/*.dtb
+evidence/**/*.img
+
+# Host tools and private/local settings
+.claude/
+.codex/
+adb.exe
+fastboot.exe
+*.dll
+.publish-staging/
+
+# Build output
+build*/
+u-boot/build*/
+hakios-kernel
+__pycache__/

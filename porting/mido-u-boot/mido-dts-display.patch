@@ -1,0 +1,17 @@
+diff --git a/devices/mido/u-boot/files/dts/upstream/src/arm64/qcom/msm8953-xiaomi-mido.dts b/devices/mido/u-boot/files/dts/upstream/src/arm64/qcom/msm8953-xiaomi-mido.dts
+--- a/devices/mido/u-boot/files/dts/upstream/src/arm64/qcom/msm8953-xiaomi-mido.dts
++++ b/devices/mido/u-boot/files/dts/upstream/src/arm64/qcom/msm8953-xiaomi-mido.dts
+@@ -40,13 +40,4 @@
+ 			stride = <(1080 * 3)>;
+ 			format = "r8g8b8";
+ 
+-			power-domains = <&gcc MDSS_GDSC>;
+-
+-			clocks = <&gcc GCC_MDSS_AHB_CLK>,
+-				 <&gcc GCC_MDSS_AXI_CLK>,
+-				 <&gcc GCC_MDSS_VSYNC_CLK>,
+-				 <&gcc GCC_MDSS_MDP_CLK>,
+-				 <&gcc GCC_MDSS_BYTE0_CLK>,
+-				 <&gcc GCC_MDSS_PCLK0_CLK>,
+-				 <&gcc GCC_MDSS_ESC0_CLK>;
+ 		};

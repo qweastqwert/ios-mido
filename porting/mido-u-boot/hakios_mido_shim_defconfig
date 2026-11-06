@@ -1,0 +1,37 @@
+# HakiOS's U-Boot for Xiaomi Redmi Note 4 / 4X (mido): started by ABL from RAM.
+# MSM8953 with eMMC on sdhc_1; no storage is written by this target.
+#include "qcom_defconfig"
+
+CONFIG_ARM=y
+CONFIG_CLK_QCOM_MSM8953=y
+CONFIG_DEFAULT_DEVICE_TREE="qcom/msm8953-xiaomi-mido"
+CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="board/qualcomm/hakios-mido-shim.env"
+CONFIG_CMD_HAKIOS=y
+CONFIG_EFI_QCOM_USB_DEVICE=y
+
+# Qualcomm phone bring-up: visible panic, menu, fastboot and USB console.
+CONFIG_PANIC_HANG=y
+CONFIG_CMD_PAUSE=y
+CONFIG_BOOT_RETRY=y
+CONFIG_BOOT_RETRY_TIME=1
+CONFIG_BUTTON_REMAP_PHONE_KEYS=y
+CONFIG_RETRY_BOOTCMD=y
+CONFIG_USB_FUNCTION_FASTBOOT=y
+CONFIG_USB_FUNCTION_ACM=y
+CONFIG_CMD_UMS_ABORT_KEYED=y
+CONFIG_CONSOLE_RECORD=y
+CONFIG_CONSOLE_RECORD_INIT_F=y
+CONFIG_CONSOLE_RECORD_OUT_SIZE=0x6000
+CONFIG_FASTBOOT_CMD_OEM_CONSOLE=y
+CONFIG_FASTBOOT_OEM_RUN=y
+# CONFIG_REQUIRE_SERIAL_CONSOLE is not set
+
+# The loader accepts an HKUB container containing loader.efi and a payload.
+CONFIG_FASTBOOT_BUF_SIZE=0x8000000
+
+# U-Boot must not arm a watchdog or expose capsule update paths.
+# CONFIG_WATCHDOG_AUTOSTART is not set
+# CONFIG_EFI_RUNTIME_UPDATE_CAPSULE is not set
+# CONFIG_EFI_CAPSULE_ON_DISK is not set
+# CONFIG_EFI_CAPSULE_FIRMWARE_RAW is not set
+# CONFIG_TOOLS_MKEFICAPSULE is not set
