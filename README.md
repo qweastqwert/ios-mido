@@ -2,6 +2,8 @@
 
 Public contribution and verification rules are in [CONTRIBUTING.md](CONTRIBUTING.md). In particular, a fix must be verified on the intended target or with a documented substitute before it is committed and pushed.
 
+For the next coding agent, start with [docs/AGENT_HANDOFF.md](docs/AGENT_HANDOFF.md). It separates verified facts from hypotheses and gives the next safe implementation sequence.
+
 Last updated: 2026-11-05
 
 ## Goal
