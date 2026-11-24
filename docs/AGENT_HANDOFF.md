@@ -4,7 +4,7 @@ This document is for the next coding agent. Treat it as an engineering log, not 
 
 ## Mission
 
-Advance the HakiOS/Darwin port to the Redmi Note 4/4X (`mido`, MSM8953, 3 GiB RAM). Reconcile this port with the current upstream tree before changing code. Upstream has moved beyond the earlier 2.3.4/iOS 16.5 baseline: its current README describes XNU/Darwin 26/27 and a device-generic kernel with phone ports in separate device repositories. Do not assume old scripts, branches, APIs, image formats, or milestones still apply.
+Advance the legacy HakiOS 2.3.4 / iOS 16.5 port to the Redmi Note 4/4X (`mido`, MSM8953, 3 GiB RAM). Pin work to the legacy XNU `xnu-8796.121.2` line and its matching iPhoneOS 16.5 SDK. Do not use the newer Darwin 26/27 (`xnu-12377.121.6`) tree for this target.
 
 The immediate technical milestone remains to reach an observable, stable RAM-loaded boot stage on mido, but first re-evaluate whether current upstream already supports the relevant boot and device-port workflow.
 
@@ -37,7 +37,7 @@ Historical diagnosis from our 2.3.4 experiments: U-Boot/USB/PHY failed before a 
 
 ## Current upstream re-evaluation (required first)
 
-Read the current upstream `README.md`, `CHANGELOG.md`, `Documentation/layout.md`, `Documentation/building.md`, `Documentation/porting.md`, `Documentation/drivers.md`, and the phone test guide. Use the upstream `MAINTAINERS` and `scripts/tests-for.py FILE` to identify required checks for every changed file. Current upstream describes `make phone FROM=URL`, `tools/boards.py status NAME`, `make check`, and kernel verify/syntax checks; inspect the exact checked-out scripts and docs before running commands.
+Read the legacy checkout's `README.md`, `CHANGELOG.md`, device-port guide, U-Boot guide, and build docs. Do not follow newer `make phone FROM=URL`, Darwin 26/27, or `common` branch instructions for this target. Confirm the source tags and exact commit against the 2.3.4 changelog before building.
 
 Compare the old mido work in this repository against current upstream:
 
@@ -61,30 +61,32 @@ Key findings from that log:
 - Its stated register/boot geometry came from a different mido boot image (crDroid 15) and is a valuable cross-check, not a replacement for our live dynamic LOS23 evidence. In particular, its RAM probe reports unresolved RAM sizing and the project says real installed RAM remains to be confirmed.
 - The MIDO log lists later patch numbers through `0102` and says the immediate next step is to build/run its patched XNU with early boot tracing. Before using that prescription, inspect the actual commit, patch contents, scripts, provenance, and current upstream compatibility; do not copy generated images or any device dumps.
 
-The current kernel upstream is a separate, newer project generation: its README identifies XNU `xnu-12377.121.6` / Darwin 26 and 27, with device DTS/configs and phone workflows integrated into that tree. The UEFI repository says no phone profiles exist there yet, expects a tested device profile and U-Boot overlay, and emits an Android boot image for a supported RAM-boot command. This mido phone's observed `sbl1 -> aboot` chain is not an established UEFI route. Therefore:
+The legacy HakiOS 2.3.4 changelog identifies XNU `xnu-8796.121.2` (the Darwin 16.5 kernel), iPhoneOS 16.5 SDK tools, U-Boot `v2026.07`, and Mu-Silicium UEFI as its source line. Pin the exact legacy checkout commit before building. Do not follow the newer `common` branch or its Darwin 26/27 APIs for this work. The external mido scaffold is likewise an iOS 16-era reference and records the boot-image and early XNU lessons.
+
+The mido phone's observed `sbl1 -> aboot` chain is still a key compatibility constraint. The old U-Boot tree and ABL RAM boot are the initial route; UEFI is not assumed. Therefore:
 
 1. Treat the external `mido-ios-xnu` branch as the nearest implementation reference for the existing iOS 16.5-era port, especially its early XNU bring-up and boot-image lessons.
-2. Treat current HakiOS `common` and `hakios-uefi` as the intended current upstream direction, but first prove the legacy aboot handoff can support its loader and agree on an integration boundary. Do not transplant old U-Boot into the new UEFI tree by assumption.
-3. Keep three tracks distinct in notes: legacy iOS 16.5/SWEET scaffold, current Darwin 26/27 HakiOS, and the independently captured dynamic LOS23 mido hardware baseline.
-4. First build a compatibility table for boot chain, payload/ADT format, device-profile layout, eMMC/root contract, display/early console, and RAM sizing. Then choose one minimal offline compile/packaging milestone. No new phone boot should occur until the image is built from reviewed source and its expected output and recovery path are clear.
+2. Use only the pinned legacy HakiOS 2.3.4 checkout for implementation. Reuse its U-Boot and loader contract, and adapt the existing mido configs/DTS and read-only MMC code there.
+3. Keep the external iOS 16.5 mido scaffold and the independently captured dynamic LOS23 hardware baseline distinct; cross-check board constants before reuse.
+4. First milestone: make the mido RAM-boot diagnostic shim reach a clear screen. Then advance through the scaffold's early XNU/MMU milestones. Keep every boot RAM-only until evidence supports a more permanent path.
 
 ## Rehydrate a development environment
 
-Use a fresh WSL checkout; do not depend on deleted absolute paths or personal usernames. Start with one shallow checkout of the current kernel and inspect its own setup/build scripts before allocating a second tree:
+Use a fresh WSL checkout; do not depend on deleted absolute paths or personal usernames. The legacy 2.3.4 code is the target; clone its documented public kernel repository shallowly and record the commit before building:
 
 ```bash
 export WORK="$HOME/work"
 export HAKIOS_ROOT="$WORK/hakios-234"
 mkdir -p "$WORK"
-git clone --depth=1 --branch common https://github.com/oosexgang/hakios-xnu-kernel "$HAKIOS_ROOT"
+git clone --depth=1 https://github.com/oosexgang/hakios-xnu-kernel "$HAKIOS_ROOT"
 git -C "$HAKIOS_ROOT" rev-parse HEAD
 ```
 
-The old source checkpoint is documented in the root README. Record the newly cloned commit; the `common` branch has continued changing and may be force-rewritten. Keep the checkout shallow and avoid cloning a second large build tree.
+The expected 2.3.4 line uses XNU `xnu-8796.121.2` and the iPhoneOS 16.5 SDK. Confirm the checked-out changelog says 2.3.4 and these source versions; if it does not, stop before applying mido changes. Keep the checkout shallow and avoid cloning a second large build tree.
 
-Inspect the current [hakios-uefi](https://github.com/oosexgang/hakios-uefi) README and scripts. UEFI/UBoot is now in this separate repo; follow its current build and device integration model. The old locally patched U-Boot tree and configs are historical reference only until rebased and verified.
+Use the U-Boot and loader sources bundled/configured by that legacy checkout. The prior separate `hakios-uefi` repository is reference only; do not mix its independent current profile model into the legacy build without a demonstrated need.
 
-The old source under `porting/mido-u-boot/` belongs to the 2.3.4 U-Boot experiment. Treat it as reference material only; do not copy it into the current HakiOS checkout until the new profile/layout and boot-chain compatibility assessment above says where it belongs. The external mido scaffold is also a separate iOS 16-era path, not a drop-in device profile for current Darwin 26/27. The existing helper scripts require:
+Adapt the mido source under `porting/mido-u-boot/` directly to the legacy tree's expected device layout. Use the external mido scaffold for its iOS 16-era early XNU/MMU findings, but independently validate any constants or patches against our dynamic LOS23 device tree. The existing helper scripts require:
 
 ```bash
 export HAKIOS_ROOT="$HOME/work/hakios-234"
@@ -111,7 +113,7 @@ Keep a failed experiment as a failed experiment. Do not overwrite logs or edit a
 
 ### 1. Build an observable shell/pause image
 
-First inspect the current upstream phone workflow and the old shim/pause configs. If the current loader still supports mido through a RAM-only boot, build a minimal diagnostic image that stops visibly before loading Darwin. Keep video output and USB paths independently testable.
+First inspect the legacy U-Boot phone workflow and the old shim/pause configs. Build a minimal diagnostic image that stops visibly before loading Darwin. Keep video output and USB paths independently testable.
 
 If possible, attach a 1.8 V Qualcomm UART/test point. A UART trace is much more useful than guessing from USB disappearance. If no UART is available, use the panel and a long `pause`/menu delay, then record exactly what is visible.
 
@@ -144,7 +146,7 @@ Compare every custom register offset/rate with the Linux MSM8953 GCC and PHY dri
 
 ### 4. Only after U-Boot fastboot works, test HakiOS protocol
 
-Only use the current upstream phone test workflow after U-Boot and USB behavior are understood. The old HakiOS sequence below is historical and must be revalidated against current code before use:
+Only use the legacy HakiOS phone test workflow after U-Boot and USB behavior are understood. Revalidate each command against the pinned checkout:
 
 ```text
 fastboot stage x.hkub
@@ -156,7 +158,7 @@ Confirm the staged payload size/hash and obtain a loader-visible result. Keep th
 
 ### 5. Then test the current kernel and memory placement
 
-The earlier QEMU result showed the old 2.3.4 profile needed 7 GiB and smaller profiles failed in that loader with `not enough contiguous RAM`. Current upstream may have changed image layout and memory use; rerun the current documented QEMU/host checks before treating this as a present limitation. Do not assume swap/zram fixes early contiguous-memory allocation.
+The earlier QEMU result showed the old 2.3.4 profile needed 7 GiB and smaller profiles failed in that loader with `not enough contiguous RAM`. Recheck this limitation against the pinned legacy loader and its documented QEMU/host workflow. Do not assume swap/zram fixes early contiguous-memory allocation.
 
 Measure the actual reserved regions and available contiguous ranges from the mido DTB before changing the loader contract. Keep the 64 MiB HakiOS payload reservation below the relevant RAM limit and verify that it does not collide with ABL/Android reservations.
 

@@ -1,4 +1,4 @@
-# HakiOS / Darwin on Redmi Note 4 (`mido`) — handoff
+# Legacy HakiOS 2.3.4 / iOS 16.5 on Redmi Note 4 (`mido`) — handoff
 
 Public contribution and verification rules are in [CONTRIBUTING.md](CONTRIBUTING.md). In particular, a fix must be verified on the intended target or with a documented substitute before it is committed and pushed.
 
@@ -8,9 +8,9 @@ Last updated: 2026-11-24
 
 ## Goal
 
-Port HakiOS to the Redmi Note 4/4X (`mido`, Snapdragon MSM8953, 3 GiB RAM). The original checkpoint targeted iOS 16.5; current HakiOS upstream describes Darwin 26/27, so version and device-port compatibility must be resolved before resuming implementation. Start with a RAM-only boot. The long-term goal is to run Darwin from phone storage, but no persistent Darwin/iOS partition has been created.
+Port legacy HakiOS 2.3.4 / iOS 16.5 to the Redmi Note 4/4X (`mido`, Snapdragon MSM8953, 3 GiB RAM), using the matching XNU 8796.121.2 and iPhoneOS 16.5 SDK line. Start with RAM-only boot. The long-term goal is to run Darwin from phone storage, but no persistent Darwin/iOS partition has been created.
 
-The [current migration assessment](docs/AGENT_HANDOFF.md#current-upstream-re-evaluation-required-first) compares the current HakiOS trees with the independent [mido-ios-xnu scaffold](https://github.com/Caiyutaojing0721/mido-ios-xnu). The scaffold's detailed log reports a mido shim boot and early XNU execution, but not a complete iOS boot; its eMMC root backend remains missing. These third-party results have not been reproduced on this device.
+The [legacy migration assessment](docs/AGENT_HANDOFF.md#current-upstream-re-evaluation-required-first) uses the independent [mido-ios-xnu scaffold](https://github.com/Caiyutaojing0721/mido-ios-xnu) as an iOS 16-era reference. Its detailed log reports a mido shim boot and early XNU execution, but not a complete iOS boot; its eMMC root backend remains missing. These third-party results have not been reproduced on this device.
 
 This is a legacy Qualcomm phone. Its boot chain is:
 

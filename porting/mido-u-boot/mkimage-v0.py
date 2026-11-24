@@ -1,34 +1,50 @@
 #!/usr/bin/env python3
+"""Package a mido U-Boot binary as an Android v0 RAM-boot image."""
+
+import argparse
 import gzip
+import os
 import struct
 import subprocess
-import os
-import sys
+import tempfile
+from pathlib import Path
 
-if len(sys.argv) != 4:
-    raise SystemExit(f"usage: {sys.argv[0]} UBOOT.BIN DTB OUTPUT.IMG")
 
-uboot, dtb, output = sys.argv[1:]
-root = os.environ.get("HAKIOS_ROOT")
-if not root:
-    raise SystemExit("set HAKIOS_ROOT to the HakiOS checkout containing devices/mido/prebuilt/mkbootimg.py")
-kernel = "/tmp/mido-uboot-custom-kernel-v0"
-ramdisk = "/tmp/mido-empty-ramdisk-custom-v0"
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("uboot", type=Path)
+parser.add_argument("dtb", type=Path)
+parser.add_argument("output", type=Path)
+args = parser.parse_args()
 
-with open(kernel, "wb") as out:
-    out.write(gzip.compress(open(uboot, "rb").read(), 6))
-    out.write(open(dtb, "rb").read())
-with open(ramdisk, "wb") as out:
-    out.write(b"\0")
+root_value = os.environ.get("HAKIOS_ROOT")
+if not root_value:
+    raise SystemExit("set HAKIOS_ROOT to the legacy HakiOS checkout containing devices/mido/prebuilt/mkbootimg.py")
+root = Path(root_value).expanduser().resolve()
+mkbootimg = root / "devices/mido/prebuilt/mkbootimg.py"
+if not mkbootimg.is_file():
+    raise SystemExit(f"legacy mido mkbootimg.py not found: {mkbootimg}")
+for source in (args.uboot, args.dtb):
+    if not source.is_file():
+        raise SystemExit(f"input file not found: {source}")
 
-subprocess.check_call([
-    "python3", root + "/devices/mido/prebuilt/mkbootimg.py",
-    "--kernel", kernel, "--ramdisk", ramdisk,
-    "--header_version", "0", "--base", "0x80000000", "-o", output,
-])
+args.output.parent.mkdir(parents=True, exist_ok=True)
+with tempfile.TemporaryDirectory(prefix="mido-boot-v0-") as temp_dir:
+    temp = Path(temp_dir)
+    kernel = temp / "kernel.gz-dtb"
+    ramdisk = temp / "empty-ramdisk"
+    kernel.write_bytes(gzip.compress(args.uboot.read_bytes(), compresslevel=6) + args.dtb.read_bytes())
+    ramdisk.write_bytes(b"\0")
+    subprocess.check_call([
+        "python3", str(mkbootimg),
+        "--kernel", str(kernel), "--ramdisk", str(ramdisk),
+        "--header_version", "0", "--base", "0x80000000", "-o", str(args.output),
+    ])
 
-with open(output, "rb") as image:
+with args.output.open("rb") as image:
     header = image.read(64)
-    print("kernel address:", hex(struct.unpack_from("<I", header, 12)[0]))
-    print("page size:", struct.unpack_from("<I", header, 36)[0])
-    print("header version:", struct.unpack_from("<I", header, 40)[0])
+if len(header) < 44:
+    raise SystemExit(f"mkbootimg produced an invalid short image: {args.output}")
+print("image:", args.output)
+print("kernel address:", hex(struct.unpack_from("<I", header, 12)[0]))
+print("page size:", struct.unpack_from("<I", header, 36)[0])
+print("header version:", struct.unpack_from("<I", header, 40)[0])
