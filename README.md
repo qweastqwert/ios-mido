@@ -1,14 +1,16 @@
-# HakiOS / iOS 16.5 on Redmi Note 4 (`mido`) — handoff
+# HakiOS / Darwin on Redmi Note 4 (`mido`) — handoff
 
 Public contribution and verification rules are in [CONTRIBUTING.md](CONTRIBUTING.md). In particular, a fix must be verified on the intended target or with a documented substitute before it is committed and pushed.
 
 For the next coding agent, start with [docs/AGENT_HANDOFF.md](docs/AGENT_HANDOFF.md). It separates verified facts from hypotheses and gives the next safe implementation sequence.
 
-Last updated: 2026-11-05
+Last updated: 2026-11-24
 
 ## Goal
 
-Port HakiOS/iOS 16.5 to the Redmi Note 4/4X (`mido`, Snapdragon MSM8953, 3 GiB RAM), starting with a RAM-only boot. The long-term goal is to run Darwin from phone storage, but no persistent Darwin/iOS partition has been created yet.
+Port HakiOS to the Redmi Note 4/4X (`mido`, Snapdragon MSM8953, 3 GiB RAM). The original checkpoint targeted iOS 16.5; current HakiOS upstream describes Darwin 26/27, so version and device-port compatibility must be resolved before resuming implementation. Start with a RAM-only boot. The long-term goal is to run Darwin from phone storage, but no persistent Darwin/iOS partition has been created.
+
+The [current migration assessment](docs/AGENT_HANDOFF.md#current-upstream-re-evaluation-required-first) compares the current HakiOS trees with the independent [mido-ios-xnu scaffold](https://github.com/Caiyutaojing0721/mido-ios-xnu). The scaffold's detailed log reports a mido shim boot and early XNU execution, but not a complete iOS boot; its eMMC root backend remains missing. These third-party results have not been reproduced on this device.
 
 This is a legacy Qualcomm phone. Its boot chain is:
 
@@ -24,7 +26,7 @@ It has no XBL, SBL2, UEFI, A/B slot layout, or `dtbo` partition. The phone’s n
 - All phone tests used `fastboot boot`, which loads an image into RAM only.
 - No Android system partition was formatted.
 - The phone currently returns to LineageOS after failed RAM-only tests.
-- Magisk root works; `com.android.shell` was approved and previously returned `uid=0(root)`.
+- Historical note: `com.android.shell` returned `uid=0(root)` before the latest LOS reinstall. On 2026-11-24, ADB connected but `su` was absent/inaccessible, so root access is not currently confirmed.
 - Do not run `fastboot flash`, `erase`, `format`, `repartition`, or `dd` unless a separate backup/rollback plan is agreed.
 
 ## Phone baseline
@@ -34,13 +36,15 @@ Current/working Android baseline:
 - Device: Redmi Note 4 / 4X, codename `mido`
 - ADB: use the device selected by `adb devices`; no device serial is stored in this repository
 - ROM used for the authoritative capture: stable LineageOS 23.2, non-A/B dynamic build
-- Kernel: 4.19.x; the latest reinstalled baseline reported `4.19.325-cip130-st14-Mi-Titanium-v2`
+- Kernel: 4.19.x; current read-only ADB check reported `4.19.325-cip136-st20-perf-g4a43f94c363c`. The earlier reinstalled baseline was `4.19.325-cip130-st14-Mi-Titanium-v2`.
 - RAM: 3 GiB
 - Existing zram: approximately 2 GiB; no separate swap partition is needed for current bring-up
 - Storage: raw system/super approximately 20 GiB (`mmcblk0p48`), userdata approximately 4.8 GiB, boot/recovery approximately 64 MiB each
 - Display: OTM1911, 1080x1920
 - Touch: FocalTech `fts_ts-mi8953`, I2C address `0x38`
 - Boot storage: eMMC/SDHCI1, not UFS
+
+Read-only ADB check on 2026-11-24 confirmed device codename `mido`, Android 16, dynamic partitions enabled, kernel `4.19.325-cip136-st20-perf-g4a43f94c363c`, and 2 GiB swap (zram). The security patch reports `2026-10-01`. The unprivileged shell had only 38 MiB free RAM at capture; this is a live Android reading and may change. `su` was unavailable, so no fresh privileged DTB capture was performed.
 
 The original 8 GiB system partition is no longer the current layout; it was expanded to approximately 20 GiB. The dynamic partition group itself is only about 4.09 GiB, so the whole raw 20 GiB is not automatically available as one Android/Darwin logical volume.
 
